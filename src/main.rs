@@ -9,7 +9,7 @@ fn main() {
     let mut port = String::new();
     io::stdout().flush().unwrap();
     io::stdin().read_line(&mut port).unwrap();
-    let url = format!("http://127.0.0.1:{}", port);
+    let url = format!("http://127.0.0.1:{}/v1/Login/GetQRcode", port);
 
     let resp =
         reqwest::blocking::get(url.clone()).expect(format!("请检查地址是否正确：{}", url).as_str());
