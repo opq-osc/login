@@ -11,3 +11,9 @@ rqrr = "0.3.2"
 image = "0.23.14"
 base64 = "0.13.0"
 qrcode = "0.12"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
