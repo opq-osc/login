@@ -7,9 +7,9 @@ import subprocess
 import sys
 import urllib.parse
 
-import qrcode
 import requests
-import zxing
+from PIL import Image
+from numpy import array
 
 
 class OPQLogin(object):
@@ -61,6 +61,47 @@ class OPQLogin(object):
         else:
             self._showQRCodeImg('cmd')
 
+    def matrix_to_ascii(self, modules, out=None, tty=False, invert=False):
+        """
+        Output the QR Code using ASCII characters.
+
+        :param tty: use fixed TTY color codes (forces invert=True)
+        :param invert: invert the ASCII characters (solid <-> transparent)
+        """
+        if out is None:
+            out = sys.stdout
+
+        if tty and not out.isatty():
+            raise OSError("Not a tty")
+
+        modcount = len(modules[0])
+        codes = [bytes((code,)).decode('cp437')
+                 for code in (255, 223, 220, 219)]
+        if tty:
+            invert = True
+        if invert:
+            codes.reverse()
+
+        def get_module(x, y):
+            if (invert and max(x, y) >= modcount):
+                return 1
+            if min(x, y) < 0 or max(x, y) >= modcount:
+                return 0
+            return not modules[x][y]
+
+        for r in range(0, modcount, 2):
+            if tty:
+                if not invert or r < modcount + -1:
+                    out.write('\x1b[48;5;232m')  # Background black
+                out.write('\x1b[38;5;255m')  # Foreground white
+            for c in range(0, modcount):
+                pos = get_module(r, c) + (get_module(r + 1, c) << 1)
+                out.write(codes[pos])
+            if tty:
+                out.write('\x1b[0m')
+            out.write('\n')
+        out.flush()
+
     def _showQRCodeImg(self, str):
         url = 'http://127.0.0.1:{}/v1/Login/GetQRcode'.format(self.port)
         try:
@@ -80,8 +121,12 @@ class OPQLogin(object):
                 subprocess.call(["open", QRCODE_PATH])
                 print('[*] 二维码图片已打开，请使用手机QQ扫描该二维码')
             else:
-                barcode = zxing.BarCodeReader().decode(QRCODE_PATH)
-                self._str2qr(barcode.parsed)
+                pic_qrcode = Image.open(QRCODE_PATH).crop((9, 9, 126, 126)).resize((39, 39))
+                print("[*] 请使用手机QQ扫描该二维码：")
+                try:
+                    self.matrix_to_ascii(array(pic_qrcode), tty=True, invert=True)
+                except:
+                    self.matrix_to_ascii(array(pic_qrcode), invert=True)
 
     def start(self):
         print('[*] OPQBot Get Login QRcode')
@@ -90,19 +135,6 @@ class OPQLogin(object):
             print('[*] 正在获取登录二维码 ... ')
             self.genQRCode()
         print('[*] 程序退出.')
-
-    def _str2qr(self, url):
-        print("===============================")
-        print("请使用手机QQ访问该地址：\n{}".format(url))
-        qr = qrcode.QRCode(border=1)
-        qr.add_data(url)
-        qr.make()
-        print("===============================")
-        print("请使用手机QQ扫描该二维码：")
-        try:
-            qr.print_ascii(tty=True, invert=True)
-        except:
-            qr.print_ascii(invert=True)
 
 
 if __name__ == '__main__':
