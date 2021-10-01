@@ -8,9 +8,12 @@ import subprocess
 import sys
 import urllib.parse
 
-import requests
-from numpy import array
-from PIL import Image
+try:
+    import requests
+    from numpy import array
+    from PIL import Image
+except ImportError:
+    sys.exit("请安装依赖：pip install numpy, requests, pillow")
 
 
 class OPQLogin(object):

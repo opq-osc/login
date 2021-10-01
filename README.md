@@ -9,3 +9,8 @@
 ### 方式二
 
 python login.py
+
+### 方式三
+
+这个也可以用在本地能直接访问的情况，但依赖多一点
+python login2.py
